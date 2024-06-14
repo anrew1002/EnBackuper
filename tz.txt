@@ -1,0 +1,1 @@
+Есть ли вероятность что учетка для snmp и для telnet`а будет не admin, admin? А community не public?
