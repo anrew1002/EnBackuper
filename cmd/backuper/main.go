@@ -31,6 +31,7 @@ func run(ctx context.Context) error {
 	modelName, err := snmp.GetSNMPDescription(IPAdresses[0])
 	if err != nil {
 		log.Error("error getting model name", sl.Err(err))
+		return err
 	}
 
 	// TODO: разделить запуска и созадание
