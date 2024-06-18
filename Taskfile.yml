@@ -1,0 +1,14 @@
+version: '3'
+
+tasks:
+  build:
+    cmds:
+      - go build -v -o backuper.exe ./cmd/backuper/
+  run:
+    cmds:
+      - go build -v -o backuper.exe ./cmd/backuper/
+      - ./backuper.exe --selfaddr 192.168.80.254
+  test:
+    cmds:
+      - go build -v -o backuper.exe ./cmd/backuper/
+        - ./backuper.exe --selfaddr 192.168.80.254 --test

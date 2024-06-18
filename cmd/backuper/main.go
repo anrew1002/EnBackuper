@@ -2,13 +2,17 @@ package main
 
 import (
 	"context"
+	"entelekom/backuper/internal/fileread"
 	"entelekom/backuper/internal/sl"
 	"entelekom/backuper/internal/snmp"
 	"entelekom/backuper/internal/telnet"
+	"flag"
 	"fmt"
+	"log"
 	"log/slog"
 	"os"
 	"os/signal"
+	"path/filepath"
 )
 
 func main() {
@@ -22,24 +26,50 @@ func main() {
 }
 
 func run(ctx context.Context) error {
-
+	config := flagParse()
 	log := slog.New(
 		slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
 	)
+
+	networks, err := fileread.ReadNetworks(config.net_file)
+	if err != nil {
+		return err
+	}
+	for i := range networks {
+		networks[i].GetIPs()
+	}
+
+	if config.test {
+		fmt.Println("Test OK")
+		return nil
+	}
+
+	// workers.ConcurrentBackup(log, networks, config.selfAddr)
+
 	IPAdresses := []string{"192.168.47.55", "192.168.47.56"}
 
-	modelName, err := snmp.GetSNMPDescription(IPAdresses[0])
-	if err != nil {
-		log.Error("error getting model name", sl.Err(err))
-		return err
+	// TODO: разделить запуск и созадание
+	for i := range IPAdresses {
+
+		modelName, err := snmp.GetSNMPDescription(IPAdresses[i])
+		if err != nil {
+			log.Error("error getting model name", sl.Err(err))
+			return err
+		}
+
+		fmt.Println(modelName)
+		fmt.Println(i)
+		tc, err := telnet.NewTelnetConnetor(modelName, IPAdresses[i]+":23")
+		if err != nil {
+			log.Error("Failed obtain telnet connection")
+			continue
+		}
+		err = tc.Backup(config.selfAddr)
+		if err != nil {
+			log.Error("Failed backup", sl.Err(err))
+		}
 	}
 
-	// TODO: разделить запуска и созадание
-	tc, err := telnet.NewTelnetConnetor(modelName, IPAdresses[0]+":23")
-	if err != nil {
-		return err
-	}
-	tc.Backup("10.10.1.2")
 	// go func() {
 	// 	log.Info(fmt.Sprintf("listening...on %s", httpServer.Addr))
 	// 	if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -58,4 +88,32 @@ func run(ctx context.Context) error {
 	// }()
 	// wg.Wait()
 	return nil
+}
+
+type Config struct {
+	selfAddr string
+	net_file string
+	test     bool
+}
+
+func flagParse() Config {
+	progname := filepath.Base(os.Args[0])
+	selfAddr := flag.String("selfaddr", "", "Адрес сети с которого запускается backuper")
+	filename := flag.String("file", "networks.txt", "Файл с сетями для сканирования")
+	test := flag.Bool("test", false, "Запустить программу в холостую для проверки конфигурации")
+
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr,
+			`%s запускает бэкапирование на коммутаторах:
+ %s [Flags]
+
+Flags:
+`, progname, progname)
+		flag.PrintDefaults()
+	}
+	flag.Parse()
+	if *selfAddr == "" {
+		log.Fatal("Selfaddr флаг должен быть указан")
+	}
+	return Config{selfAddr: *selfAddr, net_file: *filename, test: *test}
 }

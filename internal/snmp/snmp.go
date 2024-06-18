@@ -2,19 +2,21 @@ package snmp
 
 import (
 	"fmt"
-	"log"
-	"os"
+	"strings"
 
 	snmp "github.com/gosnmp/gosnmp"
 )
 
+// Получение информации о коммутаторе по протоколу SNMPD
 func GetSNMPDescription(ip string) (string, error) {
 
 	snmp.Default.Target = ip
-	snmp.Default.Logger = snmp.NewLogger(log.New(os.Stdout, "", 0))
+	snmp.Default.ExponentialTimeout = false
+	// snmp.Default.Logger = snmp.NewLogger(log.New(os.Stdout, "", 0))
+
 	err := snmp.Default.Connect()
 	if err != nil {
-		return "", fmt.Errorf("%s error getting desc: %w", snmp.Default.Target, err)
+		return "", fmt.Errorf("%s error getting desc: %w", ip, err)
 	}
 	defer snmp.Default.Conn.Close()
 
@@ -26,5 +28,10 @@ func GetSNMPDescription(ip string) (string, error) {
 	}
 	hostDescr := result.Variables[0].Value.([]byte)
 
-	return string(hostDescr), nil
+	output := string(hostDescr)
+	output = strings.Replace(output, " ", "_", -1)
+	output = strings.Replace(output, "/", "_", -1)
+	output = strings.Replace(output, "\n", "", -1)
+
+	return output, nil
 }

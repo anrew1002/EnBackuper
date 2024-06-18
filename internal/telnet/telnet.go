@@ -2,8 +2,6 @@ package telnet
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	tlnt "github.com/reiver/go-telnet"
@@ -29,28 +27,27 @@ func NewTelnetConnetor(modelName string, socket string) (*TelnetConnector, error
 func (tc *TelnetConnector) Backup(selfhost string) error {
 	tc.Authenticate()
 
-	fmt.Print(readTelnet(tc.conn))
-	fmt.Println("")
+	// fmt.Print(readTelnet(tc.conn))
+	// fmt.Println("")
 
-	command := tc.getCommand(selfhost)
+	command := tc.getBackupCommand(selfhost)
+	fmt.Println(command)
 	tc.WriteRawCommand(command)
-	// tc.conn.Write([]byte("q"))
-	fmt.Print(readTelnet(tc.conn))
-	fmt.Println("")
+	time.Sleep(2 * time.Second)
+	writetoFile(readTelnet(tc.conn))
+	// fmt.Print(readTelnet(tc.conn))
+	// if strings.Contains(readTelnet(tc.conn), "Success") {
+	// 	return nil
+	// }
+	// // fmt.Println("")
+	// return errors.New("Backup isnt succesful")
 	return nil
-}
-
-func (tc *TelnetConnector) getCommand(selfhost string) string {
-	filename := fmt.Sprintf("%s_%s", strconv.FormatInt(time.Now().UTC().UnixNano(), 10), tc.modelName)
-	filename = strings.Replace(filename, " ", "_", -1)
-	filename = strings.Replace(filename, "\n", "", -1)
-	command := fmt.Sprintf("upload cfg_toTFTP %s dest_file %s.cfg", selfhost, filename)
-	return command
 }
 
 func (tc *TelnetConnector) WriteRawCommand(command string) {
 	tc.conn.Write([]byte(command + "\r\n"))
 }
+
 func (tc *TelnetConnector) Authenticate() {
 	tc.WriteRawCommand("admin")
 	tc.WriteRawCommand("admin")
