@@ -29,7 +29,8 @@ func GetSNMPDescription(ip string) (string, error) {
 		MaxOids:            snmp.MaxOids,
 		Target:             ip,
 	}
-
+	// Так как SNMP работает по протоколу UDP понять работает соединение
+	// или нет возможно лишь после отправки первого запроса
 	err := ConnSNMP.Connect()
 	if err != nil {
 		return "", fmt.Errorf("%w, %s: %w", ErrConnect, ConnSNMP.Target, err)

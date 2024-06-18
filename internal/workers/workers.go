@@ -6,13 +6,15 @@ import (
 	"entelekom/backuper/internal/snmp"
 	"entelekom/backuper/internal/telnet"
 	"errors"
+	"fmt"
 	"log/slog"
 	"sync"
 )
 
 func worker(log *slog.Logger, tftpAddr string, jobs <-chan string, results chan<- int) {
+	fmt.Println("start worker")
 	for ip := range jobs {
-
+		fmt.Println(ip)
 		modelName, err := snmp.GetSNMPDescription(ip)
 		if err != nil {
 			switch {
@@ -46,7 +48,7 @@ func ConcurrentBackup(log *slog.Logger, networks []models.Network, tftpAddr stri
 	for w := 1; w <= 3; w++ {
 		wg.Add(1)
 		go func() {
-			wg.Done()
+			defer wg.Done()
 			worker(log, tftpAddr, jobs, results)
 		}()
 	}

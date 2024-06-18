@@ -3,9 +3,7 @@ package main
 import (
 	"context"
 	"entelekom/backuper/internal/fileread"
-	"entelekom/backuper/internal/sl"
-	"entelekom/backuper/internal/snmp"
-	"entelekom/backuper/internal/telnet"
+	"entelekom/backuper/internal/workers"
 	"flag"
 	"fmt"
 	"log"
@@ -42,7 +40,9 @@ func run(ctx context.Context) error {
 		return err
 	}
 	for i := range networks {
-		networks[i].GetIPs()
+		for _, ips := range networks[i].GetIPs() {
+			fmt.Println(ips)
+		}
 	}
 
 	if config.test {
@@ -50,31 +50,31 @@ func run(ctx context.Context) error {
 		return nil
 	}
 
-	// workers.ConcurrentBackup(log, networks, config.selfAddr)
+	workers.ConcurrentBackup(log, networks, config.selfAddr)
 
-	IPAdresses := []string{"192.168.47.55", "192.168.47.56"}
+	// IPAdresses := []string{"192.168.47.55", "192.168.47.56"}
 
-	// TODO: разделить запуск и созадание
-	for i := range IPAdresses {
+	// // TODO: разделить запуск и созадание
+	// for i := range IPAdresses {
 
-		modelName, err := snmp.GetSNMPDescription(IPAdresses[i])
-		if err != nil {
-			log.Error("error getting model name", sl.Err(err))
-			return err
-		}
+	// 	modelName, err := snmp.GetSNMPDescription(IPAdresses[i])
+	// 	if err != nil {
+	// 		log.Error("error getting model name", sl.Err(err))
+	// 		return err
+	// 	}
 
-		fmt.Println(modelName)
-		fmt.Println(i)
-		tc, err := telnet.NewTelnetConnetor(modelName, IPAdresses[i]+":23")
-		if err != nil {
-			log.Error("Failed obtain telnet connection")
-			continue
-		}
-		err = tc.Backup(config.selfAddr)
-		if err != nil {
-			log.Error("Failed backup", sl.Err(err))
-		}
-	}
+	// 	fmt.Println(modelName)
+	// 	fmt.Println(i)
+	// 	tc, err := telnet.NewTelnetConnetor(modelName, IPAdresses[i]+":23")
+	// 	if err != nil {
+	// 		log.Error("Failed obtain telnet connection")
+	// 		continue
+	// 	}
+	// 	err = tc.Backup(config.selfAddr)
+	// 	if err != nil {
+	// 		log.Error("Failed backup", sl.Err(err))
+	// 	}
+	// }
 
 	// go func() {
 	// 	log.Info(fmt.Sprintf("listening...on %s", httpServer.Addr))
