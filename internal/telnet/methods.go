@@ -11,6 +11,7 @@ import (
 )
 
 var (
+	// Сделать в виде key-value storage miteshbsjat/textfilekv (?)
 	backupCommandString = map[string]string{
 		"DES-1210-28_ME_B2":                     "upload cfg_toTFTP %s %s.cfg",
 		"DGS-3420-26SC_Gigabit_Ethernet_Switch": "upload cfg_toTFTP %s dest_file %s.cfg",

@@ -5,6 +5,7 @@ import (
 	"entelekom/backuper/internal/sl"
 	"entelekom/backuper/internal/snmp"
 	"entelekom/backuper/internal/telnet"
+	"errors"
 	"log/slog"
 	"sync"
 )
@@ -14,7 +15,12 @@ func worker(log *slog.Logger, tftpAddr string, jobs <-chan string, results chan<
 
 		modelName, err := snmp.GetSNMPDescription(ip)
 		if err != nil {
-			log.Error("error getting model name", sl.Err(err))
+			switch {
+			case errors.Is(err, snmp.ErrConnect):
+				log.Debug("worker couldnt connect", sl.Err(err))
+			case errors.Is(err, snmp.ErrGetOID):
+				log.Error("worker error", sl.Err(err))
+			}
 			continue
 		}
 

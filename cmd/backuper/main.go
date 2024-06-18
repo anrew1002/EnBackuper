@@ -15,6 +15,12 @@ import (
 	"path/filepath"
 )
 
+type Config struct {
+	selfAddr string
+	net_file string
+	test     bool
+}
+
 func main() {
 	ctx := context.Background()
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
@@ -88,12 +94,6 @@ func run(ctx context.Context) error {
 	// }()
 	// wg.Wait()
 	return nil
-}
-
-type Config struct {
-	selfAddr string
-	net_file string
-	test     bool
 }
 
 func flagParse() Config {

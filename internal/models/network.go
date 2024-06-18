@@ -47,7 +47,6 @@ func (n Network) GetIPs() []string {
 		// convert back to net.IP
 		ip := make(net.IP, 4)
 		binary.BigEndian.PutUint32(ip, i)
-		fmt.Println(ip)
 		IPs = append(IPs, ip.String())
 	}
 	return IPs

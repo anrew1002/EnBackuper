@@ -6,6 +6,7 @@ import (
 	"os"
 )
 
+// checkFile проверяет существует ли файл
 func checkFile(filePath string) {
 	_, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
@@ -13,6 +14,7 @@ func checkFile(filePath string) {
 	}
 }
 
+// readFile читает файл
 func readFile(filePath string) (*bufio.Scanner, *os.File, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -26,6 +28,7 @@ func readFile(filePath string) (*bufio.Scanner, *os.File, error) {
 
 }
 
+// ReadNetworks читает все записи о сетях в файле по пути filePath
 func ReadNetworks(filePath string) (networks []models.Network, err error) {
 	checkFile(filePath)
 	dataBuf, file, err := readFile(filePath)
