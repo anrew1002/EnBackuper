@@ -1,6 +1,7 @@
 package telnet
 
 import (
+	"entelekom/backuper/internal/models"
 	"fmt"
 	"time"
 
@@ -8,20 +9,20 @@ import (
 )
 
 type TelnetConnector struct {
-	modelName     string
+	device        models.Device
 	conn          *tlnt.Conn
 	socket        string
 	commandPrompt string
 }
 
-func NewTelnetConnetor(modelName string, socket string) (*TelnetConnector, error) {
+func NewTelnetConnetor(device models.Device, socket string) (*TelnetConnector, error) {
 	conn, err := tlnt.DialTo(socket)
 	if err != nil {
 		return nil, err
 	}
 	// Временная стандартная строчка на приглашение
 	commandPrompt := "#"
-	return &TelnetConnector{modelName: modelName, socket: socket, conn: conn, commandPrompt: commandPrompt}, nil
+	return &TelnetConnector{device: device, socket: socket, conn: conn, commandPrompt: commandPrompt}, nil
 }
 
 func (tc *TelnetConnector) Backup(selfhost string) error {

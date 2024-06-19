@@ -30,8 +30,8 @@ func readTelnet(conn *tlnt.Conn) string {
 }
 
 func (tc *TelnetConnector) getBackupCommand(selfhost string) string {
-	filename := fmt.Sprintf("%s_%s", strconv.FormatInt(time.Now().UTC().UnixNano(), 10), tc.modelName)
-	cmdStr, ok := backupCommandString[tc.modelName]
+	filename := fmt.Sprintf("%s_%s", strconv.FormatInt(time.Now().UTC().UnixNano(), 10), tc.device.Name)
+	cmdStr, ok := backupCommandString[tc.device.Model]
 	if !ok {
 		return ""
 	}

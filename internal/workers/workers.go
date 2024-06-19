@@ -22,6 +22,8 @@ func worker(log *slog.Logger, tftpAddr string, jobs <-chan string, results chan<
 				log.Debug("worker couldnt connect", sl.Err(err))
 			case errors.Is(err, snmp.ErrGetOID):
 				log.Error("worker error", sl.Err(err))
+			default:
+				log.Error("Unexpected error", sl.Err(err))
 			}
 			continue
 		}

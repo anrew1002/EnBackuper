@@ -1,6 +1,7 @@
 package snmp
 
 import (
+	"entelekom/backuper/internal/models"
 	"errors"
 	"fmt"
 	"strings"
@@ -15,7 +16,7 @@ var (
 )
 
 // Получение информации о коммутаторе по протоколу SNMPD
-func GetSNMPDescription(ip string) (string, error) {
+func GetSNMPDescription(ip string) (models.Device, error) {
 
 	//Создаем новое соединение SNMP
 	ConnSNMP := &snmp.GoSNMP{
@@ -33,20 +34,29 @@ func GetSNMPDescription(ip string) (string, error) {
 	// или нет возможно лишь после отправки первого запроса
 	err := ConnSNMP.Connect()
 	if err != nil {
-		return "", fmt.Errorf("%w, %s: %w", ErrConnect, ConnSNMP.Target, err)
+		return models.Device{}, fmt.Errorf("%w, %s: %w", ErrConnect, ConnSNMP.Target, err)
 	}
 	defer ConnSNMP.Conn.Close()
-
-	oids := []string{".1.3.6.1.2.1.1.1.0"}
+	// .1.3.6.1.2.1.1.5.0 .1.3.6.1.2.1.1.1.0
+	oids := []string{
+		// модель
+		".1.3.6.1.2.1.1.1.0",
+		// имя
+		".1.3.6.1.2.1.1.5.0",
+	}
 	result, err := ConnSNMP.Get(oids)
 	if err != nil {
-		return "", fmt.Errorf("%w, %s: %w", ErrGetOID, ConnSNMP.Target, err)
+		return models.Device{}, fmt.Errorf("%w, %s: %w", ErrGetOID, ConnSNMP.Target, err)
 	}
-	hostDescr := result.Variables[0].Value.([]byte)
+	// fmt.Printf("%+v", result.Variables)
+	// fmt.Printf("%+v", string(result.Variables[0].Value.([]byte)))
 
-	output := sanitizeString(string(hostDescr))
+	device := models.Device{
+		Model: sanitizeString(string(result.Variables[0].Value.([]byte))),
+		Name:  sanitizeString(string(result.Variables[1].Value.([]byte))),
+	}
 
-	return output, nil
+	return device, nil
 }
 
 func sanitizeString(hostDescr string) string {
