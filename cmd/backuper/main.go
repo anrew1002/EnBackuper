@@ -3,14 +3,18 @@ package main
 import (
 	"context"
 	"entelekom/backuper/internal/fileread"
+	"entelekom/backuper/internal/sl"
 	"entelekom/backuper/internal/workers"
+	"errors"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log"
 	"log/slog"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"time"
 )
 
 type Config struct {
@@ -50,8 +54,32 @@ func run(ctx context.Context) error {
 		return nil
 	}
 
-	workers.ConcurrentBackup(log, networks, config.selfAddr)
-
+	backups := workers.ConcurrentBackup(log, networks, config.selfAddr)
+	time.Sleep(30 * time.Second)
+	counter := 0
+	for _, filename := range backups {
+		filepath := filepath.Join(`E:\EN+\tftpd\`, filename+".cfg")
+		fileInfo, err := os.Stat(filepath)
+		fmt.Println(filepath)
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				log.Error("Бэкап отстутствует", "имя", filename)
+				continue
+			}
+			log.Error("Ошибка проверки бэкапов", sl.Err(err))
+			continue
+		}
+		if fileInfo.Size() == 0 {
+			log.Error("Ошибка проверки бэкапов: нулевой размер", "имя", filename)
+			continue
+		}
+		counter += 1
+	}
+	if counter == len(backups) {
+		log.Info("Успешно завершенный процесс бэкапирования")
+	} else {
+		log.Error("Были бэкапированы не все коммутаторы")
+	}
 	// IPAdresses := []string{"192.168.47.55", "192.168.47.56"}
 
 	// // TODO: разделить запуск и созадание

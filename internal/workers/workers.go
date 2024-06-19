@@ -11,7 +11,7 @@ import (
 	"sync"
 )
 
-func worker(log *slog.Logger, tftpAddr string, jobs <-chan string, results chan<- int) {
+func worker(log *slog.Logger, tftpAddr string, jobs <-chan string, results chan<- string) {
 	fmt.Println("start worker")
 	for ip := range jobs {
 		fmt.Println(ip)
@@ -28,26 +28,30 @@ func worker(log *slog.Logger, tftpAddr string, jobs <-chan string, results chan<
 			continue
 		}
 
-		tc, err := telnet.NewTelnetConnetor(modelName, ip+":23")
+		tc, err := telnet.NewTelnetConnector(modelName, ip+":23")
 		if err != nil {
 			log.Error("Failed obtain telnet connection", sl.Err(err))
 			continue
 		}
-		err = tc.Backup(tftpAddr)
+		backupFilename, err := tc.Backup(tftpAddr)
 		if err != nil {
 			log.Error("Failed backup", sl.Err(err))
 			continue
 		}
+		results <- backupFilename
 	}
 }
 
-func ConcurrentBackup(log *slog.Logger, networks []models.Network, tftpAddr string) {
-	const numJobs = 5
+// ConcurrentBackup Начинает мультипоточное выполнение бэкапирования
+//
+// Возращает названия файлов бэкапов, которые должны будут загрузить коммутаторы
+func ConcurrentBackup(log *slog.Logger, networks []models.Network, tftpAddr string) []string {
+	const numJobs = 3
 	jobs := make(chan string, numJobs)
-	results := make(chan int, numJobs)
+	results := make(chan string, numJobs)
 	var wg sync.WaitGroup
 
-	for w := 1; w <= 3; w++ {
+	for w := 1; w <= numJobs; w++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -59,7 +63,20 @@ func ConcurrentBackup(log *slog.Logger, networks []models.Network, tftpAddr stri
 			jobs <- ip
 		}
 	}
+	backups := make([]string, 0, 40)
+	var wg2 sync.WaitGroup
+	wg2.Add(1)
+	go func() {
+		defer wg2.Done()
+		for res := range results {
+			backups = append(backups, res)
+		}
+	}()
+
 	close(jobs)
 	wg.Wait()
+	close(results)
+	wg2.Wait()
+	return backups
 
 }

@@ -3,9 +3,7 @@ package telnet
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
-	"time"
 
 	tlnt "github.com/reiver/go-telnet"
 )
@@ -29,8 +27,8 @@ func readTelnet(conn *tlnt.Conn) string {
 	return buff
 }
 
-func (tc *TelnetConnector) getBackupCommand(selfhost string) string {
-	filename := fmt.Sprintf("%s_%s", strconv.FormatInt(time.Now().UTC().UnixNano(), 10), tc.device.Name)
+func (tc *TelnetConnector) getBackupCommand(selfhost string, filename string) string {
+
 	cmdStr, ok := backupCommandString[tc.device.Model]
 	if !ok {
 		return ""

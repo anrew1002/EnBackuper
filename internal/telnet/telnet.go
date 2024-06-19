@@ -3,6 +3,7 @@ package telnet
 import (
 	"entelekom/backuper/internal/models"
 	"fmt"
+	"strconv"
 	"time"
 
 	tlnt "github.com/reiver/go-telnet"
@@ -15,7 +16,7 @@ type TelnetConnector struct {
 	commandPrompt string
 }
 
-func NewTelnetConnetor(device models.Device, socket string) (*TelnetConnector, error) {
+func NewTelnetConnector(device models.Device, socket string) (*TelnetConnector, error) {
 	conn, err := tlnt.DialTo(socket)
 	if err != nil {
 		return nil, err
@@ -25,13 +26,16 @@ func NewTelnetConnetor(device models.Device, socket string) (*TelnetConnector, e
 	return &TelnetConnector{device: device, socket: socket, conn: conn, commandPrompt: commandPrompt}, nil
 }
 
-func (tc *TelnetConnector) Backup(selfhost string) error {
+// Backup с помощью telnet отправляет команды на бэкапирование коммутатору
+// при этом не гарантируется что бэкап будет создан
+// Возращает имя файла бэкапа и ошибку.
+func (tc *TelnetConnector) Backup(selfhost string) (string, error) {
 	tc.Authenticate()
 
 	// fmt.Print(readTelnet(tc.conn))
 	// fmt.Println("")
-
-	command := tc.getBackupCommand(selfhost)
+	filename := fmt.Sprintf("%s_%s", strconv.FormatInt(time.Now().UTC().UnixNano(), 10), tc.device.Name)
+	command := tc.getBackupCommand(selfhost, filename)
 	fmt.Println(command)
 	tc.WriteRawCommand(command)
 	time.Sleep(2 * time.Second)
@@ -42,7 +46,7 @@ func (tc *TelnetConnector) Backup(selfhost string) error {
 	// }
 	// // fmt.Println("")
 	// return errors.New("Backup isnt succesful")
-	return nil
+	return filename, nil
 }
 
 func (tc *TelnetConnector) WriteRawCommand(command string) {
