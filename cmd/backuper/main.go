@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"entelekom/backuper/internal/config"
 	"entelekom/backuper/internal/fileread"
 	"entelekom/backuper/internal/sl"
 	"entelekom/backuper/internal/workers"
@@ -9,19 +10,12 @@ import (
 	"flag"
 	"fmt"
 	"io/fs"
-	"log"
 	"log/slog"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"time"
 )
-
-type Config struct {
-	selfAddr string
-	net_file string
-	test     bool
-}
 
 func main() {
 	ctx := context.Background()
@@ -39,7 +33,7 @@ func run(ctx context.Context) error {
 		slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
 	)
 
-	networks, err := fileread.ReadNetworks(config.net_file)
+	networks, err := fileread.ReadNetworks(config.NETWORKS_FILE)
 	if err != nil {
 		return err
 	}
@@ -49,16 +43,16 @@ func run(ctx context.Context) error {
 		}
 	}
 
-	if config.test {
+	if config.Test {
 		fmt.Println("Test OK")
 		return nil
 	}
 
-	backups := workers.ConcurrentBackup(log, networks, config.selfAddr)
+	backups := workers.ConcurrentBackup(log, networks, config.TFTP)
 	time.Sleep(30 * time.Second)
 	counter := 0
 	for _, filename := range backups {
-		filepath := filepath.Join(`E:\EN+\tftpd\`, filename+".cfg")
+		filepath := filepath.Join(config.TFTPData, filename+".cfg")
 		fileInfo, err := os.Stat(filepath)
 		fmt.Println(filepath)
 		if err != nil {
@@ -124,10 +118,10 @@ func run(ctx context.Context) error {
 	return nil
 }
 
-func flagParse() Config {
+func flagParse() config.Config {
+
 	progname := filepath.Base(os.Args[0])
-	selfAddr := flag.String("selfaddr", "", "Адрес сети с которого запускается backuper")
-	filename := flag.String("file", "networks.txt", "Файл с сетями для сканирования")
+	filename := flag.String("file", "", "Файл с сетями для сканирования")
 	test := flag.Bool("test", false, "Запустить программу в холостую для проверки конфигурации")
 
 	flag.Usage = func() {
@@ -135,13 +129,17 @@ func flagParse() Config {
 			`%s запускает бэкапирование на коммутаторах:
  %s [Flags]
 
-Flags:
-`, progname, progname)
+ Flags:
+ `,
+			progname, progname)
 		flag.PrintDefaults()
 	}
+
+	config := config.MustLoad()
 	flag.Parse()
-	if *selfAddr == "" {
-		log.Fatal("Selfaddr флаг должен быть указан")
+	config.Test = *test
+	if *filename != "" {
+		config.NETWORKS_FILE = *filename
 	}
-	return Config{selfAddr: *selfAddr, net_file: *filename, test: *test}
+	return *config
 }

@@ -7,8 +7,8 @@ tasks:
   run:
     cmds:
       - go build -v -o backuper.exe ./cmd/backuper/
-      - ./backuper.exe --selfaddr $TFTP
+      - ./backuper.exe --tftp $TFTP
   test:
     cmds:
       - go build -v -o backuper.exe ./cmd/backuper/
-      - ./backuper.exe --selfaddr $TFTP --test
+      - ./backuper.exe --tftp $TFTP --test

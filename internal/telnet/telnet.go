@@ -29,13 +29,13 @@ func NewTelnetConnector(device models.Device, socket string) (*TelnetConnector, 
 // Backup с помощью telnet отправляет команды на бэкапирование коммутатору
 // при этом не гарантируется что бэкап будет создан
 // Возращает имя файла бэкапа и ошибку.
-func (tc *TelnetConnector) Backup(selfhost string) (string, error) {
+func (tc *TelnetConnector) Backup(tftp string) (string, error) {
 	tc.Authenticate()
 
 	// fmt.Print(readTelnet(tc.conn))
 	// fmt.Println("")
 	filename := fmt.Sprintf("%s_%s", strconv.FormatInt(time.Now().UTC().UnixNano(), 10), tc.device.Name)
-	command := tc.getBackupCommand(selfhost, filename)
+	command := tc.getBackupCommand(tftp, filename)
 	fmt.Println(command)
 	tc.WriteRawCommand(command)
 	time.Sleep(2 * time.Second)
